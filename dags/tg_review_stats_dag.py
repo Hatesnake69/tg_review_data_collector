@@ -5,7 +5,6 @@ from datetime import datetime
 
 from src import generate_tg_reviews_stats, fetch_and_store_reviews
 
-# Настроим DAG
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
@@ -22,7 +21,6 @@ dag = DAG(
 )
 
 
-# Задачи DAG
 fetch_reviews_task = PythonOperator(
     task_id="fetch_reviews", python_callable=fetch_and_store_reviews, dag=dag
 )

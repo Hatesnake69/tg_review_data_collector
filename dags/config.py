@@ -8,12 +8,12 @@ DB_CONFIG = {
     "dbname": "airflow",
     "user": "airflow",
     "password": "airflow",
-    "host": "postgres",  # Имя сервиса PostgreSQL в Docker Compose
+    "host": "postgres",
     "port": 5432,
 }
 limit=50000
 DB_CONFIG_CLICKHOUSE = {
-    'host': 'clickhouse',  # Имя сервиса ClickHouse в Docker Compose
+    'host': 'clickhouse',
     'port': 9000,
     'user': 'default',
     'password': 'clickpass',
