@@ -3,7 +3,7 @@ from airflow.operators.python import PythonOperator
 
 from datetime import datetime
 
-from common import generate_tg_reviews_stats, fetch_and_store_reviews
+from src import generate_tg_reviews_stats, fetch_and_store_reviews
 
 # Настроим DAG
 default_args = {
