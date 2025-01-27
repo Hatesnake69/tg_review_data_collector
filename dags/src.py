@@ -73,8 +73,10 @@ def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
         cursor.execute(create_table_query)
         conn.commit()
         insert_query = """
-        INSERT INTO tg_reviews (review_id, user_name, user_image, language, country, content, score, thumbs_up_count,
-                                review_created_version, created_at, reply_content, replied_at, app_version)
+        INSERT INTO tg_reviews (
+            review_id, user_name, user_image, language, country, content, score, thumbs_up_count,
+            review_created_version, created_at, reply_content, replied_at, app_version
+        )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (review_id) DO NOTHING;
         """
@@ -105,6 +107,10 @@ def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
     except Exception as e:
         logging.error(f"Ошибка при записи в PostgreSQL: {e}", exc_info=True)
 
+def fetch_and_store_reviews():
+    for country in countries:
+        reviews_data = fetch_reviews_for_all_countries_and_languages(country)
+        save_reviews_to_postgres(reviews_data)
 
 def get_last_tg_stat_record() -> TgReviewStat | None:
     query = """
@@ -247,9 +253,3 @@ def generate_tg_reviews_stats():
     for stat in stats:
         write_stat_to_clickhouse(stat)
     logging.info("tg_review_stats recorded")
-
-
-def fetch_and_store_reviews():
-    for country in countries:
-        reviews_data = fetch_reviews_for_all_countries_and_languages(country)
-        save_reviews_to_postgres(reviews_data)
