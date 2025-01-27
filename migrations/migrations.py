@@ -6,17 +6,16 @@ import psycopg2
 from clickhouse_driver import Client
 
 
-# Параметры подключения к БД
 DB_CONFIG_POSTGRES = {
     'dbname': 'airflow',
     'user': 'airflow',
     'password': 'airflow',
-    'host': 'postgres',  # Имя сервиса PostgreSQL в Docker Compose
+    'host': 'postgres',
     'port': 5432
 }
 
 DB_CONFIG_CLICKHOUSE = {
-    'host': 'clickhouse',  # Имя сервиса ClickHouse в Docker Compose
+    'host': 'clickhouse',
     'port': 9000,
     'user': 'default',
     'password': 'clickpass',
@@ -68,7 +67,6 @@ DROP_TABLE_QUERY_CLICKHOUSE = '''
 
 
 def execute_postgres_query(query):
-    """Выполнение SQL-запроса."""
     try:
         conn = psycopg2.connect(**DB_CONFIG_POSTGRES)
         cursor = conn.cursor()
@@ -81,7 +79,6 @@ def execute_postgres_query(query):
         logging.error(f"Ошибка при выполнении запроса к постгре: {e}", exc_info=True)
 
 def execute_clickhouse_query(query):
-    """Выполнение SQL-запроса для ClickHouse."""
     try:
         client = Client(**DB_CONFIG_CLICKHOUSE)
         client.execute(query)

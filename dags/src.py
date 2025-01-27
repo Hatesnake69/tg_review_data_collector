@@ -21,7 +21,6 @@ def fetch_reviews_for_all_countries_and_languages(country: str) -> list[TgReview
         logging.info(f"Сбор отзывов для страны: {country}, язык: {lang}")
         continuation_token = None  # Токен для следующей страницы
         retries = 5
-
         while True:
             reviews_data, continuation_token = reviews(
                 app_id,
@@ -34,7 +33,6 @@ def fetch_reviews_for_all_countries_and_languages(country: str) -> list[TgReview
             logging.info(
                 f"Загружено {len(reviews_data)} отзывов для {country} ({lang}). Всего: {len(all_reviews)}"
             )
-
             if not continuation_token:
                 break
             elif retries <= 0:
@@ -46,24 +44,17 @@ def fetch_reviews_for_all_countries_and_languages(country: str) -> list[TgReview
             if len(reviews_data) != limit:
                 logging.info(f"Размер reviews_data меньше лимита => отзывов больше нет")
                 break
-
     return all_reviews
 
 def remove_null_bytes(value):
-    """Удаляет NULL-байты из строки."""
     if isinstance(value, str):
         return value.replace("\x00", "")
     return value
 
 def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
-    """
-    Сохранение полученных отзывов в базу данных PostgreSQL.
-    """
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cursor = conn.cursor()
-
-        # Создание таблицы (если не существует)
         create_table_query = """
         CREATE TABLE IF NOT EXISTS tg_reviews (
             review_id UUID PRIMARY KEY,
@@ -81,15 +72,12 @@ def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
         """
         cursor.execute(create_table_query)
         conn.commit()
-
-        # Вставка данных
         insert_query = """
         INSERT INTO tg_reviews (review_id, user_name, user_image, language, country, content, score, thumbs_up_count,
                                 review_created_version, created_at, reply_content, replied_at, app_version)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (review_id) DO NOTHING;
         """
-
         for review in reviews_data:
             sanitized_data = (
                 review.reviewId,
@@ -112,7 +100,6 @@ def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
                 logging.warning(
                     f"Не удалось вставить отзыв {review.reviewId}: {e}"
                 )
-
         conn.commit()
         logging.info("Все отзывы успешно сохранены в PostgreSQL.")
     except Exception as e:
@@ -120,7 +107,6 @@ def save_reviews_to_postgres(reviews_data: list[TgReview]) -> None:
 
 
 def get_last_tg_stat_record() -> TgReviewStat | None:
-    """Выполнение SQL-запроса для ClickHouse."""
     query = """
         SELECT *
         FROM tg_review_stats
@@ -154,29 +140,20 @@ def get_last_tg_stat_record() -> TgReviewStat | None:
 def get_tg_reviews(date_parameter: date = None) -> list[TgReviewFromDb]:
     query = "SELECT * FROM tg_reviews"
     params = []
-
     if date_parameter:
         query += " WHERE created_at >= %s  AND created_at < %s"
         params.append(date_parameter)
     today = datetime.now().date()
     params.append(today)
-
     try:
-        # Устанавливаем соединение с базой данных
         conn = psycopg2.connect(**DB_CONFIG)
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-
-        # Выполняем запрос
         cursor.execute(query, params)
         rows = cursor.fetchall()
-
-        # Закрываем соединение
         cursor.close()
         conn.close()
         logging.info(f"rows: {len(rows)}")
-        # Преобразуем записи в Pydantic-модели
         return [TgReviewFromDb(**row) for row in rows]
-
     except Exception as e:
         logging.error(f"Ошибка при выполнении запроса: {e}", exc_info=True)
         return []
@@ -213,10 +190,7 @@ def write_stat_to_clickhouse(stat: TgReviewStatToRecord) -> None:
         );
     """
     try:
-        # Преобразуем объект Pydantic в словарь
         params = stat.model_dump()
-
-        # Устанавливаем соединение и выполняем запрос
         client = Client(**DB_CONFIG_CLICKHOUSE)
         count = client.execute(check_query, params)[0][0]
         if count > 0:
@@ -232,12 +206,9 @@ def group_reviews_by_language_and_date(
 ) -> dict[tuple[str, datetime], list[TgReviewFromDb]]:
     grouped_reviews = defaultdict(list)
     for review in reviews:
-        # Извлекаем язык и дату
         language = review.language
-        date = review.created_at.date()  # Берем только дату без времени
+        date = review.created_at.date()
         key = (language, date)
-
-        # Добавляем review в соответствующую группу
         grouped_reviews[key].append(review)
 
     return dict(grouped_reviews)
